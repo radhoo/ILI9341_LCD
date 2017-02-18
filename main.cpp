@@ -26,30 +26,14 @@
 #include "timeout.h"
 #include "gpio/DigitalPin.h"
 #include "ili9341/ili9341.h"
-#include "misc/aux.h"
-#include "time/AsyncRTC128T0.h"
-#include "inverter/inverter.h"
 #include "touch/TouchScreen.h"
 
-AsyncRTC128T0	 	time;							// handles the time interrupts
 DigitalPin			pinDC(&PORTC, PC4), pinRESET(&PORTC, PC5), pinCS(&PORTC, PC6),
 					touchIRQ(&PORTA, PA0), touchDO(&PORTA, PA1), touchDI(&PORTA, PA2), touchCS(&PORTA, PA3),touchCLK(&PORTA, PA4);
 ILI9341 			lcd;
 TouchScreen			touch;
 bool				cmdRefreshText = true; 			// to increase speed, only draw once per second
 
-// callback function called from the timecounter object when a full minute has elapsed
-void callback_timeMinute() {}
-
-// callback function called from the timecounter object when a full second has elapsed
-void callback_timeSecond() {
-	cmdRefreshText = true;
-}
-
-// On our Async T0 , this ISR will be called precisely each second
-ISR(TIMER0_OVF_vect) {
-	time.TimerEvent();
-}
 
 // define some colored areas as color picker buttons
 uint16_t buttons [5][5]= {
@@ -61,10 +45,7 @@ uint16_t buttons [5][5]= {
 }, penColor = RED;
 
 int main(void) {
-	// 3.CREATE Timer T0 to count seconds
-	time.init(callback_timeSecond, callback_timeMinute);
-	sei();
-
+	
 	lcd.init(&pinDC, &pinRESET, &pinCS);
 	lcd.setRotation(ILI9341::ROT0);
 
@@ -92,7 +73,7 @@ int main(void) {
 		// draw some text but only once per second
 		if (cmdRefreshText) {
 			char tmp[255] = {0};
-			sprintf(tmp, "%02u:%02u %03d %03d %04X", time.getMin(), time.getSec(), x, y, penColor);
+			sprintf(tmp, "%02u:%02u %03d %03d %04X", 0,0, x, y, penColor);
 			lcd.drawString(0, textY(18,2), tmp, 2, YELLOW, BLACK);
 			lcd.drawString(0, textY(19,2), "www.pocketmagic.net", 2, RED, BLACK);
 			cmdRefreshText = false;
